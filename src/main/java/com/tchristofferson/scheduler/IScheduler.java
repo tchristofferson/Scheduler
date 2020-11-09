@@ -19,6 +19,8 @@ public interface IScheduler extends Runnable {
      */
     void shutdown();
 
+    boolean isShutdown();
+
     /**
      * Shutdown the scheduler. All tasks will be ran.
      * @param runTasksSynchronously If you want to run all tasks as synchronous tasks even if they were scheduled for asynchronous execution.<br>

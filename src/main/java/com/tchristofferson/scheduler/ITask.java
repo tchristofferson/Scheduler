@@ -16,4 +16,6 @@ public interface ITask {
 
     boolean isFinished();
 
+    Thread getThread();
+
 }

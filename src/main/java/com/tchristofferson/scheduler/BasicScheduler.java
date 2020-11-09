@@ -12,9 +12,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class BasicScheduler implements IScheduler {
 
-    private final AtomicBoolean isShutdown = new AtomicBoolean(false);
-    private final ExecutorService executorService = Executors.newCachedThreadPool();
-    private final List<BasicTask> pendingTasks = new ArrayList<>();
+    protected final AtomicBoolean isShutdown = new AtomicBoolean(false);
+    protected final ExecutorService executorService = Executors.newCachedThreadPool();
+    protected final List<BasicTask> pendingTasks = new ArrayList<>();
     //Initial value is -1
     //getNextId method will increment first task so it will have id of 0
     private final AtomicInteger taskIdCounter = new AtomicInteger(-1);
@@ -69,7 +69,7 @@ public class BasicScheduler implements IScheduler {
     }
 
     @Override
-    public void shutdown() {
+    public synchronized void shutdown() {
         setIsShutDown();
         executorService.shutdown();
 
@@ -79,7 +79,14 @@ public class BasicScheduler implements IScheduler {
     }
 
     @Override
-    public void shutdownAndRunTasks(boolean runTasksSynchronously) {
+    public synchronized boolean isShutdown() {
+        synchronized (isShutdown) {
+            return isShutdown.get();
+        }
+    }
+
+    @Override
+    public synchronized void shutdownAndRunTasks(boolean runTasksSynchronously) {
         setIsShutDown();
         executorService.shutdown();
 
@@ -119,8 +126,6 @@ public class BasicScheduler implements IScheduler {
         }
 
         final long time = System.currentTimeMillis();
-        List<BasicTask> syncTasks = new ArrayList<>();
-
         synchronized (pendingTasks) {
             Iterator<BasicTask> iterator = pendingTasks.iterator();
 
@@ -131,20 +136,16 @@ public class BasicScheduler implements IScheduler {
                     continue;
 
                 if (task.isSync())
-                    syncTasks.add(task);
+                    task.run();
                 else
                     executorService.execute(task::run);
 
                 iterator.remove();
             }
-
-            for (BasicTask task : syncTasks) {
-                task.run();
-            }
         }
     }
 
-    private int getNextId() {
+    protected int getNextId() {
         synchronized (taskIdCounter) {
             return taskIdCounter.incrementAndGet();
         }
@@ -152,10 +153,20 @@ public class BasicScheduler implements IScheduler {
 
     private BasicTask addTask(boolean isSync, long delay, Runnable task) {
         BasicTask basicTask = new BasicTask(getNextId(), isSync, delay, task);
+        return addTask(basicTask);
+    }
 
-        synchronized (pendingTasks) {
-            pendingTasks.add(basicTask);
-        }
+    //If changes to this method are made they must also be changed in TestBasicScheduler.java
+    BasicTask addTask(BasicTask basicTask) {
+        /*
+         * Tasks need to be scheduled on a different thread or scheduling a task within another task will throw
+         * concurrent exception because of an iterator for pendingTasks inside of the run method
+         */
+        executorService.submit(() -> {
+            synchronized (pendingTasks) {
+                pendingTasks.add(basicTask);
+            }
+        });
 
         return basicTask;
     }

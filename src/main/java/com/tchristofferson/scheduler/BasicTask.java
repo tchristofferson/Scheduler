@@ -1,6 +1,7 @@
 package com.tchristofferson.scheduler;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class BasicTask implements ITask {
 
@@ -11,6 +12,7 @@ public class BasicTask implements ITask {
     private final AtomicBoolean isCanceled;
     private final AtomicBoolean isRunning;
     private final AtomicBoolean isFinished;
+    private final AtomicReference<Thread> thread;
     private final Runnable task;
 
     public BasicTask(int taskId, boolean isSync, long delay, Runnable task) {
@@ -21,6 +23,7 @@ public class BasicTask implements ITask {
         this.isCanceled = new AtomicBoolean(false);
         this.isRunning = new AtomicBoolean(false);
         this.isFinished = new AtomicBoolean(false);
+        this.thread = new AtomicReference<>(null);
         this.task = task;
     }
 
@@ -65,7 +68,16 @@ public class BasicTask implements ITask {
         }
     }
 
+    @Override
+    public Thread getThread() {
+        synchronized (thread) {
+            return thread.get();
+        }
+    }
+
     public synchronized void run() {
+        setThread(Thread.currentThread());
+
         synchronized (isRunning) {
             isRunning.set(true);
         }
@@ -84,6 +96,12 @@ public class BasicTask implements ITask {
     public void setCanceled() {
         synchronized (isCanceled) {
             isCanceled.set(true);
+        }
+    }
+
+    void setThread(Thread thread) {
+        synchronized (this.thread) {
+            this.thread.set(thread);
         }
     }
 
