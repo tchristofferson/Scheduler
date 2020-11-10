@@ -75,6 +75,10 @@ public class BasicTask implements ITask {
         }
     }
 
+    public Runnable getTask() {
+        return task;
+    }
+
     public synchronized void run() {
         setThread(Thread.currentThread());
 
@@ -103,9 +107,5 @@ public class BasicTask implements ITask {
         synchronized (this.thread) {
             this.thread.set(thread);
         }
-    }
-
-    public Runnable getTask() {
-        return task;
     }
 }

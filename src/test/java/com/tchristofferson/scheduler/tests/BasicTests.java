@@ -1,5 +1,8 @@
-package com.tchristofferson.scheduler;
+package com.tchristofferson.scheduler.tests;
 
+import com.tchristofferson.scheduler.ITask;
+import com.tchristofferson.scheduler.TestBasicScheduler;
+import com.tchristofferson.scheduler.TestBasicTask;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CountDownLatch;

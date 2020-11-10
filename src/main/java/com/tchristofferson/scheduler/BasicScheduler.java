@@ -10,6 +10,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Basic scheduler requiring the run method to be called manually and frequently
+ */
 public class BasicScheduler implements IScheduler {
 
     protected final AtomicBoolean isShutdown = new AtomicBoolean(false);

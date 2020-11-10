@@ -18,4 +18,6 @@ public interface ITask {
 
     Thread getThread();
 
+    Runnable getTask();
+
 }
